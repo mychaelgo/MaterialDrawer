@@ -4,10 +4,12 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.support.annotation.ColorInt;
 import android.support.annotation.ColorRes;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.StringRes;
+import android.support.v7.widget.RecyclerView;
 import android.util.Pair;
 
 import com.mikepenz.iconics.typeface.IIcon;
@@ -24,7 +26,7 @@ import com.mikepenz.materialdrawer.util.DrawerUIUtils;
 /**
  * Created by mikepenz on 03.02.15.
  */
-public abstract class BaseDrawerItem<T> extends AbstractDrawerItem<T> implements Nameable<T>, Iconable<T>, Tagable<T>, Typefaceable<T> {
+public abstract class BaseDrawerItem<T, VH extends RecyclerView.ViewHolder> extends AbstractDrawerItem<T, VH> implements Nameable<T>, Iconable<T>, Tagable<T>, Typefaceable<T> {
     protected ImageHolder icon;
     protected ImageHolder selectedIcon;
     protected StringHolder name;
@@ -43,6 +45,8 @@ public abstract class BaseDrawerItem<T> extends AbstractDrawerItem<T> implements
     protected Typeface typeface = null;
 
     protected Pair<Integer, ColorStateList> colorStateList;
+
+    protected int level = 1;
 
     public T withIcon(ImageHolder icon) {
         this.icon = icon;
@@ -71,7 +75,14 @@ public abstract class BaseDrawerItem<T> extends AbstractDrawerItem<T> implements
 
     public T withIcon(IIcon iicon) {
         this.icon = new ImageHolder(iicon);
-        this.selectedIcon = new ImageHolder(iicon);
+        //if we are on api 21 or higher we use the IconicsDrawable for selection too and color it with the correct color
+        //else we use just the one drawable and enable tinting on press
+        if (Build.VERSION.SDK_INT >= 21) {
+            this.selectedIcon = new ImageHolder(iicon);
+        } else {
+            this.withIconTintingEnabled(true);
+        }
+
         return (T) this;
     }
 
@@ -194,6 +205,12 @@ public abstract class BaseDrawerItem<T> extends AbstractDrawerItem<T> implements
         return (T) this;
     }
 
+    public T withLevel(int level) {
+        this.level = level;
+        return (T) this;
+    }
+
+
     public ColorHolder getSelectedColor() {
         return selectedColor;
     }
@@ -242,10 +259,9 @@ public abstract class BaseDrawerItem<T> extends AbstractDrawerItem<T> implements
         return typeface;
     }
 
-    public void setTypeface(Typeface typeface) {
-        this.typeface = typeface;
+    public int getLevel() {
+        return level;
     }
-
 
     /**
      * helper method to decide for the correct color

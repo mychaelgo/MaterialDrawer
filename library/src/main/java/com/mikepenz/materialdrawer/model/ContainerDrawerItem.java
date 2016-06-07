@@ -7,14 +7,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
+import com.mikepenz.fastadapter.utils.ViewHolderFactory;
 import com.mikepenz.materialdrawer.R;
-import com.mikepenz.materialdrawer.model.utils.ViewHolderFactory;
+import com.mikepenz.materialdrawer.holder.DimenHolder;
 import com.mikepenz.materialize.util.UIUtils;
 
 /**
  * Created by mikepenz on 03.02.15.
  */
-public class ContainerDrawerItem extends AbstractDrawerItem<ContainerDrawerItem> {
+public class ContainerDrawerItem extends AbstractDrawerItem<ContainerDrawerItem, ContainerDrawerItem.ViewHolder> {
+
+    private DimenHolder mHeight;
+
+    public ContainerDrawerItem withHeight(DimenHolder height) {
+        mHeight = height;
+        return this;
+    }
+
+    public DimenHolder getHeight() {
+        return mHeight;
+    }
+
     private View mView;
 
     public ContainerDrawerItem withView(View view) {
@@ -32,10 +45,17 @@ public class ContainerDrawerItem extends AbstractDrawerItem<ContainerDrawerItem>
         NONE;
     }
 
-    public Position mViewPosition = Position.TOP;
+    private Position mViewPosition = Position.TOP;
 
     public ContainerDrawerItem withViewPosition(Position position) {
         this.mViewPosition = position;
+        return this;
+    }
+
+    private boolean mDivider = true;
+
+    public ContainerDrawerItem withDivider(boolean divider) {
+        this.mDivider = divider;
         return this;
     }
 
@@ -44,8 +64,8 @@ public class ContainerDrawerItem extends AbstractDrawerItem<ContainerDrawerItem>
     }
 
     @Override
-    public String getType() {
-        return "CONTAINER_ITEM";
+    public int getType() {
+        return R.id.material_drawer_item_container;
     }
 
     @Override
@@ -55,14 +75,11 @@ public class ContainerDrawerItem extends AbstractDrawerItem<ContainerDrawerItem>
     }
 
     @Override
-    public void bindView(RecyclerView.ViewHolder holder) {
-        Context ctx = holder.itemView.getContext();
-
-        //get our viewHolder
-        ViewHolder viewHolder = (ViewHolder) holder;
+    public void bindView(ViewHolder viewHolder) {
+        Context ctx = viewHolder.itemView.getContext();
 
         //set the identifier from the drawerItem here. It can be used to run tests
-        holder.itemView.setId(getIdentifier());
+        viewHolder.itemView.setId(hashCode());
 
         //define how the divider should look like
         viewHolder.view.setEnabled(false);
@@ -72,14 +89,26 @@ public class ContainerDrawerItem extends AbstractDrawerItem<ContainerDrawerItem>
             ((ViewGroup) mView.getParent()).removeView(mView);
         }
 
+        //set the height
+        if (mHeight != null) {
+            RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) viewHolder.view.getLayoutParams();
+            lp.height = mHeight.asPixel(ctx);
+            viewHolder.view.setLayoutParams(lp);
+        }
+
         //make sure the header view is empty
         ((ViewGroup) viewHolder.view).removeAllViews();
 
+        int dividerHeight = 0;
+        if (mDivider) {
+            dividerHeight = 1;
+        }
+
         View divider = new View(ctx);
-        divider.setMinimumHeight(1);
+        divider.setMinimumHeight(dividerHeight);
         divider.setBackgroundColor(UIUtils.getThemeColorFromAttrOrRes(ctx, R.attr.material_drawer_divider, R.color.material_drawer_divider));
 
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) UIUtils.convertDpToPixel(1, ctx));
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) UIUtils.convertDpToPixel(dividerHeight, ctx));
 
         //depending on the position we add the view
         if (mViewPosition == Position.TOP) {
@@ -95,21 +124,21 @@ public class ContainerDrawerItem extends AbstractDrawerItem<ContainerDrawerItem>
         }
 
         //call the onPostBindView method to trigger post bind view actions (like the listener to modify the item if required)
-        onPostBindView(this, holder.itemView);
+        onPostBindView(this, viewHolder.itemView);
     }
 
     @Override
-    public ViewHolderFactory getFactory() {
+    public ViewHolderFactory<ViewHolder> getFactory() {
         return new ItemFactory();
     }
 
     public static class ItemFactory implements ViewHolderFactory<ViewHolder> {
-        public ViewHolder factory(View v) {
+        public ViewHolder create(View v) {
             return new ViewHolder(v);
         }
     }
 
-    private static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         private View view;
 
         private ViewHolder(View view) {
